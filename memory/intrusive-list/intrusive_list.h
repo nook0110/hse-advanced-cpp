@@ -132,8 +132,8 @@ public:
     // that method is allowed to be O(n)
     size_t Size() const {
         size_t size = 0;
-        for (auto it =
-                 Iterator(static_cast<Iterator::pointer>(const_cast<ListHook*>(dummy_.next_))); // NOLINT
+        for (auto it = Iterator(
+                 static_cast<Iterator::pointer>(const_cast<ListHook*>(dummy_.next_)));  // NOLINT
              it !=
              Iterator(static_cast<Iterator::pointer>(const_cast<ListHook*>(&dummy_)));  // NOLINT
              ++it) {
