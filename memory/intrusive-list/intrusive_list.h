@@ -5,7 +5,7 @@
 
 class ListHook {
 public:
-    ListHook() : next_(this), prev_(this) {};
+    ListHook() : next_(this), prev_(this){};
 
     void Swap(ListHook& other) {
         if (!IsLinked()) {
