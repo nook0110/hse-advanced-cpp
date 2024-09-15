@@ -12,40 +12,40 @@ concept EmptyClassAndNotFinal = std::is_empty_v<Type> && !std::is_final_v<Type>;
 template <size_t I, typename Type>
 class Wrapper;
 
-template <size_t I, typename NonEmptyType>
-    requires(!EmptyClassAndNotFinal<NonEmptyType>)
-class Wrapper<I, NonEmptyType> {
+template <size_t I, typename Type>
+    requires(!EmptyClassAndNotFinal<Type>)
+class Wrapper<I, Type> {
 public:
     Wrapper() = default;
     template <class... Args>
     Wrapper(std::in_place_t, Args... args) : value_(std::forward<Args>(args)...) {
     }
 
-    NonEmptyType& GetValue() {
+    Type& GetValue() {
         return value_;
     }
-    const NonEmptyType& GetValue() const {
+    const Type& GetValue() const {
         return value_;
     }
 
 private:
-    NonEmptyType value_;
+    Type value_;
 };
 
-template <size_t I, class EmptyType>
-    requires(EmptyClassAndNotFinal<EmptyType>)
-class Wrapper<I, EmptyType> : public EmptyType {
+template <size_t I, class Type>
+    requires(EmptyClassAndNotFinal<Type>)
+class Wrapper<I, Type> : public Type {
 public:
     Wrapper() = default;
 
     template <class... Args>
-    Wrapper(std::in_place_t, Args&&... args) : EmptyType(std::forward<Args>(args)...) {
+    Wrapper(std::in_place_t, Args&&... args) : Type(std::forward<Args>(args)...) {
     }
 
-    EmptyType& GetValue() {
+    Type& GetValue() {
         return *this;
     }
-    const EmptyType& GetValue() const {
+    const Type& GetValue() const {
         return *this;
     }
 };
