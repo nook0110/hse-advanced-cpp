@@ -26,7 +26,7 @@ private:
 // Implement ctor, operator(), maybe something else...
 class AwesomeCallback : public OneTimeCallback {
 public:
-    AwesomeCallback(std::string s) : OneTimeCallback(s + "awesomeness") {};
+    AwesomeCallback(std::string s) : OneTimeCallback(s + "awesomeness"){};
 
     ~AwesomeCallback() = default;
 };
