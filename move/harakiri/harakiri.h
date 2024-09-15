@@ -11,13 +11,13 @@ public:
     OneTimeCallback(std::string s) : s_(std::move(s)) {
     }
 
-    ~OneTimeCallback() = default;
-
-    std::string operator()() const&& {
+    virtual std::string operator()() const&& {
         std::string ans = s_;
         delete this;
         return ans;
     }
+
+    virtual ~OneTimeCallback() = default;
 
 private:
     std::string s_;
