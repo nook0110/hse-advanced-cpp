@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    Type value_;
+    Type value_ = Type{};
 };
 
 template <size_t I, class Type>
