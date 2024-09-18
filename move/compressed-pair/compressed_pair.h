@@ -51,7 +51,7 @@ public:
 };
 
 template <typename F, typename S>
-class CompressedPair : protected Wrapper<0, F>, protected Wrapper<1, S> {
+class CompressedPair : private Wrapper<0, F>, private Wrapper<1, S> {
 public:
     CompressedPair() = default;
     CompressedPair(const F& f, const S& s) : Wrapper<0, F>(f), Wrapper<1, S>(s) {
