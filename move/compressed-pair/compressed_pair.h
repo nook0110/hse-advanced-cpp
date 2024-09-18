@@ -7,18 +7,18 @@
 // Me think, why waste time write lot code, when few code do trick.
 
 template <class Type>
-concept EmptyClassAndNotFinal = std::is_empty_v<Type> && !std::is_final_v<Type>;
+concept NonFinalEmptyClass = std::is_empty_v<Type> && !std::is_final_v<Type>;
 
 template <size_t I, typename Type>
 class Wrapper;
 
 template <size_t I, typename Type>
-    requires(!EmptyClassAndNotFinal<Type>)
+    requires(!NonFinalEmptyClass<Type>)
 class Wrapper<I, Type> {
 public:
     Wrapper() = default;
     template <class... Args>
-    Wrapper(std::in_place_t, Args... args) : value_(std::forward<Args>(args)...) {
+    Wrapper(std::in_place_t, Args&&... args) : value_(std::forward<Args>(args)...) {
     }
 
     Type& GetValue() {
@@ -33,7 +33,7 @@ private:
 };
 
 template <size_t I, class Type>
-    requires(EmptyClassAndNotFinal<Type>)
+    requires(NonFinalEmptyClass<Type>)
 class Wrapper<I, Type> : public Type {
 public:
     Wrapper() = default;
