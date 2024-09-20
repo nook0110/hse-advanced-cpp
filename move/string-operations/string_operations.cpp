@@ -106,7 +106,7 @@ std::string ReadN(const std::string& filename, size_t n) {
 
 std::string AddSlash(std::string_view path) {
     std::string s;
-    s.reserve(path.size() + !EndsWith(path, "/"));
+    s.reserve(path.size() + static_cast<size_t>(!EndsWith(path, "/")));
     s = path;
     if (!EndsWith(path, "/")) {
         s += '/';
@@ -137,7 +137,7 @@ std::string CollapseSlashes(std::string_view path) {
     ans.reserve(path.size());
 
     for (const char c : path) {
-        if (ans.size() > 0 && ans.back() == '/' && c == '/') {
+        if (!ans.empty() && ans.back() == '/' && c == '/') {
             continue;
         }
 
