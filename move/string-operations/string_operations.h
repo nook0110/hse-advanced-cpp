@@ -1,20 +1,8 @@
 #pragma once
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <algorithm>
-#include <cassert>
-#include <cctype>
-#include <concepts>
-#include <cstddef>
 #include <cstring>
-#include <filesystem>
-#include <functional>
-#include <numeric>
-#include <ranges>
 #include <string_view>
 #include <string>
-#include <utility>
 #include <vector>
 
 bool StartsWith(std::string_view string, std::string_view text);
@@ -31,6 +19,8 @@ std::string_view Dirname(std::string_view path);
 std::string_view Basename(std::string_view path);
 std::string CollapseSlashes(std::string_view path);
 std::string StrJoin(const std::vector<std::string_view>& strings, std::string_view delimiter);
+
+namespace {
 inline size_t LengthInStr(const std::string& str) {
     return str.size();
 }
@@ -85,6 +75,7 @@ void AppendTo(std::string& s, T number) {
         number /= 10;
     }
 }
+}  // namespace
 
 template <class... Args>
 std::string StrCat(Args&&... args) {
