@@ -89,7 +89,7 @@ std::vector<std::string_view> StrSplit(std::string_view text, std::string_view d
 }
 
 std::string ReadN(const std::string& filename, size_t n) {
-    auto fd = open(filename.data(), O_APPEND);
+    auto fd = open(filename.data(), O_RDONLY);
     if (fd == -1) {
         return {};
     }
