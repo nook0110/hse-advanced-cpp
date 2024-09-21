@@ -14,7 +14,7 @@
 #include <vector>
 
 bool StartsWith(std::string_view string, std::string_view text) {
-    return std::ranges::equal(string.substr(0, text.size()), text);
+    return string.substr(0, text.size()) == text;
 }
 
 bool EndsWith(std::string_view string, std::string_view text) {
@@ -22,7 +22,7 @@ bool EndsWith(std::string_view string, std::string_view text) {
         return false;
     }
 
-    return std::ranges::equal(string.substr(string.size() - text.size()), text);
+    return string.substr(string.size() - text.size()) == text;
 }
 
 std::string_view StripPrefix(std::string_view string, std::string_view prefix) {
