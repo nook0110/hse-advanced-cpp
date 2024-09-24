@@ -71,7 +71,7 @@ class IntrusivePtr {
 public:
     // Constructors
     IntrusivePtr() = default;
-    IntrusivePtr(std::nullptr_t) {};
+    IntrusivePtr(std::nullptr_t){};
     IntrusivePtr(T* ptr) {
         Reset(ptr);
     }
