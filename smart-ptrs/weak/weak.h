@@ -41,14 +41,16 @@ public:
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Destructor
 
-    ~WeakPtr() = default;
+    ~WeakPtr() {
+        Reset();
+    };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Modifiers
 
     void Reset() {
         object_ = nullptr;
-        control_block_ = nullptr;
+        AssignControlBlock();
     }
     void Swap(WeakPtr& other) {
         std::swap(object_, other.object_);
