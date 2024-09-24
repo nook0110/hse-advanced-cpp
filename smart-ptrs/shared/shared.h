@@ -77,7 +77,7 @@ public:
 
     SharedPtr() = default;
     SharedPtr(std::nullptr_t) : SharedPtr() {};
-    template<typename U>
+    template <typename U>
     explicit SharedPtr(U* ptr) : object_(ptr) {
         AssignControlBlock(new ControlBlock<U>(ptr));
     }
@@ -152,7 +152,7 @@ public:
         AssignControlBlock();
     }
 
-    template<typename U>
+    template <typename U>
     void Reset(U* ptr) {
         Reset();
         object_ = ptr;
