@@ -18,7 +18,7 @@ public:
     // Constructors
 
     SharedPtr() = default;
-    SharedPtr(std::nullptr_t) {};
+    SharedPtr(std::nullptr_t){};
     template <typename U>
     explicit SharedPtr(U* ptr) : object_(ptr) {
         AssignControlBlock(new ControlBlock<U>(ptr));
