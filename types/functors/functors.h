@@ -7,7 +7,7 @@
 template <class Functor>
 class ReverseBinaryFunctor {
 public:
-    explicit ReverseBinaryFunctor(Functor f) : f_(f) {};
+    explicit ReverseBinaryFunctor(Functor f) : f_(f){};
 
     template <class T, class U>
     auto operator()(T&& t, U&& u) const {
@@ -21,7 +21,7 @@ private:
 template <class Functor>
 class ReverseUnaryFunctor {
 public:
-    explicit ReverseUnaryFunctor(Functor f) : f_(f) {};
+    explicit ReverseUnaryFunctor(Functor f) : f_(f){};
     template <class T>
     auto operator()(T&& t) const {
         return !f_(std::forward<T>(t));
