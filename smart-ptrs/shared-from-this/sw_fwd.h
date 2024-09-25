@@ -1,9 +1,6 @@
 #pragma once
 
-#include <cstddef>
 #include <exception>
-#include <optional>
-#include <utility>
 
 class BadWeakPtr : public std::exception {};
 
@@ -17,7 +14,7 @@ class ControlBlock;
 class EnableSharedFromThisBase {};
 
 template <typename T>
-class MakeSharedControlBlock ;
+class MakeSharedControlBlock;
 
 template <typename T>
 class SharedPtr;

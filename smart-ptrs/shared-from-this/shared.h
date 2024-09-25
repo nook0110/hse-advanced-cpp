@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio>
 #include <type_traits>
+#include <optional>
 #include <utility>
 #include <cstddef>  // std::nullptr_t
 
@@ -86,7 +87,7 @@ public:
     // Constructors
 
     SharedPtr() = default;
-    SharedPtr(std::nullptr_t){};
+    SharedPtr(std::nullptr_t) {};
     template <typename U>
         requires(!std::is_base_of_v<EnableSharedFromThisBase, U>)
     explicit SharedPtr(U* ptr) : object_(ptr) {
