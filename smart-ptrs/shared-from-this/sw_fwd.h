@@ -63,7 +63,7 @@ private:
     T* object_;
 };
 
-class EnableSharedFromThisBase;
+class EnableSharedFromThisBase {};
 
 template <typename T>
 class EnableSharedFromThis;

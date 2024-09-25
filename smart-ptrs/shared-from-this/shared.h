@@ -192,7 +192,6 @@ SharedPtr<T> MakeShared(Args&&... args) {
 }
 
 // Look for usage examples in tests
-class EnableSharedFromThisBase {};
 
 template <typename T>
 class EnableSharedFromThis : public EnableSharedFromThisBase {
