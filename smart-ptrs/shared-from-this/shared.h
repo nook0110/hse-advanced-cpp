@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sw_fwd.h"  // Forward declaration
-#include "weak/weak.h"
 
 #include <cassert>
 #include <concepts>
