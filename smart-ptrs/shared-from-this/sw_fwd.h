@@ -6,7 +6,6 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
-#include "shared-from-this/shared.h"
 
 class BadWeakPtr : public std::exception {};
 
