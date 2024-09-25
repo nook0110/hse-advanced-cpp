@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sw_fwd.h"  // Forward declaration
+#include "shared.h"
 
 // https://en.cppreference.com/w/cpp/memory/weak_ptr
 template <typename T>
@@ -84,12 +85,12 @@ private:
 
     void AssignControlBlock(ControlBlockBase* block = nullptr) {
         if (control_block_) {
-            control_block_->Unsubscribe(ControlBlockBase::WeakTag{});
+            control_block_->Unsubscribe(WeakTag{});
         }
         control_block_ = nullptr;
         control_block_ = block;
         if (control_block_) {
-            control_block_->Subscribe(ControlBlockBase::WeakTag{});
+            control_block_->Subscribe(WeakTag{});
         }
     }
 

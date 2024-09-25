@@ -3,12 +3,80 @@
 #include "sw_fwd.h"  // Forward declaration
 
 #include <cassert>
-#include <concepts>
 #include <cstdio>
-#include <memory>
 #include <type_traits>
 #include <utility>
 #include <cstddef>  // std::nullptr_t
+
+class ControlBlockBase {
+public:
+    virtual void DestroyObject() = 0;
+    virtual ~ControlBlockBase() = default;
+
+    void Subscribe(SharedTag) {
+        ++shared_count_;
+    }
+    void Subscribe(WeakTag) {
+        ++weak_count_;
+    }
+    void Unsubscribe(SharedTag) {
+        --shared_count_;
+        if (!shared_count_) {
+            DestroyObject();
+            if (!weak_count_) {
+                delete this;
+            }
+        }
+    }
+    void Unsubscribe(WeakTag) {
+        --weak_count_;
+        if (!weak_count_ && !shared_count_) {
+            delete this;
+        }
+    }
+
+    size_t GetCount() const {
+        return shared_count_;
+    }
+
+private:
+    size_t shared_count_ = 0;
+    size_t weak_count_ = 0;
+};
+
+template <typename T>
+class ControlBlock final : public ControlBlockBase {
+public:
+    explicit ControlBlock(T* object) : object_(object) {
+    }
+
+    void DestroyObject() override {
+        delete object_;
+    }
+
+private:
+    T* object_;
+};
+
+template <typename T>
+class MakeSharedControlBlock final : public ControlBlockBase {
+public:
+    template <typename... Args>
+    explicit MakeSharedControlBlock(std::in_place_t, Args&&... object)
+        : object_(std::in_place, std::forward<Args>(object)...) {
+    }
+
+    void DestroyObject() override {
+        object_ = std::nullopt;
+    }
+
+    T* Get() {
+        return std::addressof(*object_);
+    }
+
+private:
+    std::optional<T> object_;
+};
 
 // https://en.cppreference.com/w/cpp/memory/shared_ptr
 template <typename T>
@@ -156,12 +224,12 @@ private:
 
     void AssignControlBlock(ControlBlockBase* block = nullptr) {
         if (control_block_) {
-            control_block_->Unsubscribe(ControlBlockBase::SharedTag{});
+            control_block_->Unsubscribe(SharedTag{});
         }
         control_block_ = nullptr;
         control_block_ = block;
         if (control_block_) {
-            control_block_->Subscribe(ControlBlockBase::SharedTag{});
+            control_block_->Subscribe(SharedTag{});
         }
     }
 
@@ -196,7 +264,7 @@ SharedPtr<T> MakeShared(Args&&... args) {
 template <typename T>
 class EnableSharedFromThis : public EnableSharedFromThisBase {
 public:
-    EnableSharedFromThis() : control_block_(new EnableSharedFromThisControlBlock(this)) {
+    EnableSharedFromThis() : control_block_(new ControlBlock<EnableSharedFromThis<T>>(this)) {
     }
 
     SharedPtr<T> SharedFromThis() {
@@ -235,5 +303,5 @@ private:
         return control_block_;
     }
 
-    mutable EnableSharedFromThisControlBlock<T>* control_block_ = nullptr;
+    ControlBlock<EnableSharedFromThis<T>>* control_block_ = nullptr;
 };
