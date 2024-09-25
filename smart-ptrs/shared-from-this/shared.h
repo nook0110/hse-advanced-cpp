@@ -197,6 +197,9 @@ class EnableSharedFromThisBase {};
 template <typename T>
 class EnableSharedFromThis : public EnableSharedFromThisBase {
 public:
+    EnableSharedFromThis() : control_block_(new EnableSharedFromThisControlBlock(this)) {
+    }
+
     SharedPtr<T> SharedFromThis() {
         return SharedPtr<T>{
             GetControlBlock(),
@@ -212,7 +215,6 @@ public:
     }
 
     WeakPtr<T> WeakFromThis() noexcept {
-        InitBlock();
         return WeakPtr<T>{
             GetControlBlock(),
             dynamic_cast<T*>(this),
@@ -227,20 +229,12 @@ public:
     virtual ~EnableSharedFromThis() = default;
 
 private:
-    void InitBlock() const {
-        if (!control_block_) {
-            control_block_ =
-                new ControlBlock<T>(dynamic_cast<T*>(const_cast<EnableSharedFromThis<T>*>(this)));
-        }
-    }
-
     template <typename>
     friend class SharedPtr;
 
-    ControlBlock<T>* GetControlBlock() const {
-        InitBlock();
+    ControlBlockBase* GetControlBlock() const {
         return control_block_;
     }
 
-    mutable ControlBlock<T>* control_block_ = nullptr;
+    mutable EnableSharedFromThisControlBlock<T>* control_block_ = nullptr;
 };

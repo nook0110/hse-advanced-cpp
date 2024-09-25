@@ -4,7 +4,9 @@
 #include <cstddef>
 #include <exception>
 #include <optional>
+#include <type_traits>
 #include <utility>
+#include "shared-from-this/shared.h"
 
 class BadWeakPtr : public std::exception {};
 
@@ -61,6 +63,25 @@ private:
     T* object_;
 };
 
+class EnableSharedFromThisBase;
+
+template <typename T>
+class EnableSharedFromThis;
+
+template <typename T>
+class EnableSharedFromThisControlBlock final : public ControlBlockBase {
+public:
+    explicit EnableSharedFromThisControlBlock(EnableSharedFromThis<T>* object) : object_(object) {
+    }
+
+    void DestroyObject() override {
+        delete dynamic_cast<T*>(object_);
+    }
+
+private:
+    EnableSharedFromThis<T>* object_;
+};
+
 template <typename T>
 class MakeSharedControlBlock final : public ControlBlockBase {
 public:
@@ -86,5 +107,3 @@ class SharedPtr;
 
 template <typename T>
 class WeakPtr;
-
-class EnableSharedFromThisBase;
