@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compressed_pair.h"
+#include "intrusive/intrusive.h"
 
 #include <concepts>
 #include <cstddef>  // std::nullptr_t
@@ -8,8 +9,59 @@
 #include <type_traits>
 #include <utility>
 
+template <class T>
+class DefaultDeleter {
+public:
+    DefaultDeleter() = default;
+
+    DefaultDeleter(const DefaultDeleter&) = delete;
+
+    DefaultDeleter(DefaultDeleter&& rhs) noexcept = default;
+    template <class U>
+    DefaultDeleter(DefaultDeleter<U>&&) noexcept {
+    }
+
+    DefaultDeleter& operator=(const DefaultDeleter&) = delete;
+
+    DefaultDeleter& operator=(DefaultDeleter&&) noexcept = default;
+    template <class U>
+    DefaultDeleter& operator=(DefaultDeleter<U>&&) noexcept {
+        return *this;
+    }
+
+    ~DefaultDeleter() = default;
+
+    void operator()(T* p) const {
+        static_assert(sizeof(T) > 0);
+        static_assert(!std::is_void<T>::value);
+        delete p;
+    }
+};
+
+template <class T>
+class DefaultDeleter<T[]> {
+public:
+    DefaultDeleter() = default;
+
+    DefaultDeleter(const DefaultDeleter&) = delete;
+
+    DefaultDeleter(DefaultDeleter&& rhs) noexcept = default;
+
+    DefaultDeleter& operator=(const DefaultDeleter&) = delete;
+
+    DefaultDeleter& operator=(DefaultDeleter&&) noexcept = default;
+
+    ~DefaultDeleter() = default;
+
+    void operator()(T* p) const {
+        static_assert(sizeof(T) > 0);
+        static_assert(!std::is_void<T>::value);
+        delete[] p;
+    }
+};
+
 // Primary template
-template <typename T, typename Deleter = std::default_delete<T>>
+template <typename T, typename Deleter = DefaultDeleter<T>>
 class UniquePtr {
 public:
     ////////////////////////////////////////////////////////////////////////////////////////////////
