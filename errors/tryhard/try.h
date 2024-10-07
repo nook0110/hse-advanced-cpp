@@ -25,8 +25,8 @@ class BadTryAccess : public MessageException {
 public:
     struct ObjectEmptyTag {};
     struct NoExceptionTag {};
-    BadTryAccess(ObjectEmptyTag) : MessageException("Object is empty") {};
-    BadTryAccess(NoExceptionTag) : MessageException("No exception") {};
+    BadTryAccess(ObjectEmptyTag) : MessageException("Object is empty"){};
+    BadTryAccess(NoExceptionTag) : MessageException("No exception"){};
 };
 
 template <class T>
