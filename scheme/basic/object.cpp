@@ -178,8 +178,8 @@ std::shared_ptr<Object> ConsFunction::Evaluate(std::shared_ptr<Object> ctx) {
     CheckAmountOfArgs(ctx, 2);
 
     auto args = Flatten(*As<Cell>(ctx));
-    args.pop_back(); 
-    
+    args.pop_back();
+
     return std::make_shared<Cell>(args.front(), args.back());
 }
 
@@ -263,7 +263,7 @@ std::shared_ptr<Object> ListTailFunction::Evaluate(std::shared_ptr<Object> ctx) 
 template <class Functor>
 std::shared_ptr<Object> UnaryFunction<Functor>::Evaluate(std::shared_ptr<Object> ctx) {
     CheckAmountOfArgs(ctx, 1);
-    
+
     auto number = As<Number>(As<Cell>(ctx)->GetFirst());
     if (!number) {
         throw RuntimeError("Expected number as arg!");
@@ -340,7 +340,7 @@ std::shared_ptr<Object> LogicFunction<start_value, Functor>::Evaluate(std::share
 template <class Functor>
 std::shared_ptr<Object> BinaryFunction<Functor>::Evaluate(std::shared_ptr<Object> ctx) {
     auto values = GetValues(As<const Cell>(ctx));
-    if (values.size() < 1) {
+    if (values.empty()) {
         throw RuntimeError("Not enough args!");
     }
     return std::make_shared<Number>(
