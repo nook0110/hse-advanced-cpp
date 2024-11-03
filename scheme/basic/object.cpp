@@ -62,6 +62,23 @@ const std::array<std::unique_ptr<Function>, 27> Function::kFunctions = {
      std::make_unique<BinaryFunction<std::minus<>>>("-"),
      std::make_unique<BinaryFunction<std::divides<>>>("/")}};
 
+void Function::CheckCtx(std::shared_ptr<Object> ctx) {
+    if (!ctx || !Is<Cell>(ctx)) {
+        throw RuntimeError("Expected argument for " + name_ + "!");
+    }
+}
+void Function::CheckAmountOfArgs(std::shared_ptr<Object> ctx, size_t amount) {
+    CheckCtx(ctx);
+    auto args = Flatten(*As<Cell>(ctx));
+    if (args.back() != nullptr) {
+        throw RuntimeError("Args are not a proper list!");
+    }
+    args.pop_back();  // remove nullptr
+    if (args.size() != amount) {
+        throw RuntimeError("Incorrect amount of args!");
+    }
+}
+
 std::string Cell::Serialize() {
     auto elements = Flatten(*this);
     auto add_point = elements.back() != nullptr;
@@ -99,22 +116,14 @@ std::shared_ptr<Object> Symbol::Evaluate(std::shared_ptr<Object> ctx) {
 };
 
 std::shared_ptr<Object> QuoteFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'quote'!");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'quote'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     return As<Cell>(ctx)->GetFirst();
 }
 
 std::shared_ptr<Object> IsBooleanFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'boolean?'!");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'boolean?'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     if (auto symbol = As<Symbol>(As<Cell>(ctx)->GetFirst()->Evaluate())) {
         return std::make_shared<Symbol>(symbol->GetName() == "#f" || symbol->GetName() == "#t");
     } else {
@@ -123,42 +132,25 @@ std::shared_ptr<Object> IsBooleanFunction::Evaluate(std::shared_ptr<Object> ctx)
 }
 
 std::shared_ptr<Object> IsNumberFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'number?'");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'number?'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     return std::make_shared<Symbol>(Is<Number>(As<Cell>(ctx)->GetFirst()));
 }
 
 std::shared_ptr<Object> IsPairFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'pair?'");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'pair?'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     return std::make_shared<Symbol>(Is<Cell>(As<Cell>(ctx)->GetFirst()->Evaluate()));
 }
 
 std::shared_ptr<Object> IsNullFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'null?'");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'null?'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     return std::make_shared<Symbol>(!As<Cell>(ctx)->GetFirst()->Evaluate());
 }
 
 std::shared_ptr<Object> IsListFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'null?'");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'null?'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
 
     if (auto list = As<Cell>(As<Cell>(ctx)->GetFirst()->Evaluate())) {
         auto flattened = Flatten(*list);
@@ -173,12 +165,8 @@ std::shared_ptr<Object> IsListFunction::Evaluate(std::shared_ptr<Object> ctx) {
 }
 
 std::shared_ptr<Object> NotFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'not'!");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'not'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     if (auto symbol = As<Symbol>(As<Cell>(ctx)->GetFirst()->Evaluate())) {
         return std::make_shared<Symbol>(symbol->GetName() == "#f");
     } else {
@@ -187,28 +175,17 @@ std::shared_ptr<Object> NotFunction::Evaluate(std::shared_ptr<Object> ctx) {
 }
 
 std::shared_ptr<Object> ConsFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'not'!");
-    }
+    CheckAmountOfArgs(ctx, 2);
 
     auto args = Flatten(*As<Cell>(ctx));
-    if (args.back() != nullptr) {
-        throw RuntimeError("Args are not a proper list!");
-    }
-    args.pop_back();  // remove nullptr
-    if (args.size() != 2) {
-        throw RuntimeError("More than 2 args for cons");
-    }
+    args.pop_back(); 
+    
     return std::make_shared<Cell>(args.front(), args.back());
 }
 
 std::shared_ptr<Object> CarFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'car'!");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'car'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     if (auto cell = As<Cell>(As<Cell>(ctx)->GetFirst()->Evaluate())) {
         return cell->GetFirst();
     } else {
@@ -217,12 +194,8 @@ std::shared_ptr<Object> CarFunction::Evaluate(std::shared_ptr<Object> ctx) {
 }
 
 std::shared_ptr<Object> CdrFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'cdr'!");
-    }
-    if (As<Cell>(ctx)->GetSecond()) {
-        throw RuntimeError("Expected only one argument for 'cdr'!");
-    }
+    CheckAmountOfArgs(ctx, 1);
+
     if (auto cell = As<Cell>(As<Cell>(ctx)->GetFirst()->Evaluate())) {
         return cell->GetSecond();
     } else {
@@ -235,18 +208,10 @@ std::shared_ptr<Object> ListFunction::Evaluate(std::shared_ptr<Object> ctx) {
 }
 
 std::shared_ptr<Object> ListRefFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'list-ref'!");
-    }
+    CheckAmountOfArgs(ctx, 2);
 
     auto args = Flatten(*As<Cell>(ctx));
-    if (args.back() != nullptr) {
-        throw RuntimeError("Args are not a proper list!");
-    }
     args.pop_back();  // remove nullptr
-    if (args.size() != 2) {
-        throw RuntimeError("More than 2 args for 'list-ref'");
-    }
 
     auto list = As<Cell>(args.front()->Evaluate());
     if (!list) {
@@ -271,18 +236,10 @@ std::shared_ptr<Object> ListRefFunction::Evaluate(std::shared_ptr<Object> ctx) {
 }
 
 std::shared_ptr<Object> ListTailFunction::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument for 'list-ref'!");
-    }
+    CheckAmountOfArgs(ctx, 2);
 
     auto args = Flatten(*As<Cell>(ctx));
-    if (args.back() != nullptr) {
-        throw RuntimeError("Args are not a proper list!");
-    }
     args.pop_back();  // remove nullptr
-    if (args.size() != 2) {
-        throw RuntimeError("More than 2 args for 'list-tail'");
-    }
 
     auto list = As<Cell>(args.front()->Evaluate());
     if (!list) {
@@ -305,14 +262,9 @@ std::shared_ptr<Object> ListTailFunction::Evaluate(std::shared_ptr<Object> ctx) 
 
 template <class Functor>
 std::shared_ptr<Object> UnaryFunction<Functor>::Evaluate(std::shared_ptr<Object> ctx) {
-    if (!ctx || !Is<Cell>(ctx)) {
-        throw RuntimeError("Expected argument!");
-    }
-    auto cell = As<Cell>(ctx);
-    if (cell->GetSecond()) {
-        throw RuntimeError("Expected only one argument!");
-    }
-    auto number = As<Number>(cell->GetFirst());
+    CheckAmountOfArgs(ctx, 1);
+    
+    auto number = As<Number>(As<Cell>(ctx)->GetFirst());
     if (!number) {
         throw RuntimeError("Expected number as arg!");
     }

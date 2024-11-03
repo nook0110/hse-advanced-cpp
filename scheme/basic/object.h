@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -77,6 +78,10 @@ public:
     virtual ~Function() = default;
 
     static const std::array<std::unique_ptr<Function>, 27> kFunctions;
+
+protected:
+    void CheckCtx(std::shared_ptr<Object> ctx);
+    void CheckAmountOfArgs(std::shared_ptr<Object> ctx, size_t args);
 
 private:
     std::string name_;
