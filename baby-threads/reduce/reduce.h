@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <deque>
 #include <iterator>
 #include <optional>
 #include <thread>
@@ -15,7 +16,7 @@ struct ThreadContext {
 
 template <class RandomAccessIterator, class T, class Func>
 void ReduceThreaded(ThreadContext ctx, RandomAccessIterator first, RandomAccessIterator last,
-                    Func func, std::vector<std::optional<T>>& ans) {
+                    Func func, std::deque<std::optional<T>>& ans) {
     const auto [step, idx] = ctx;
     first += idx;
     if (first >= last) {
@@ -36,7 +37,7 @@ template <class RandomAccessIterator, class T, class Func>
 T Reduce(RandomAccessIterator first, RandomAccessIterator last, const T& initial_value, Func func) {
     std::vector<std::thread> threads;
     const auto amount_of_threads = std::thread::hardware_concurrency();
-    std::vector<std::optional<T>> answers(amount_of_threads);
+    std::deque<std::optional<T>> answers(amount_of_threads);
 
     for (size_t i = 0; i < amount_of_threads; ++i) {
         threads.emplace_back(ReduceThreaded<RandomAccessIterator, T, Func>,
