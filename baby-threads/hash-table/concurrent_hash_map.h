@@ -58,10 +58,8 @@ public:
     void Clear() {
         std::lock_guard lock(mutex_);
 
-        std::vector<std::unique_lock<std::mutex>> chains;
-
         for (const auto& [_, chain] : table_) {
-            chains.emplace_back(chain.mutex);
+            chain.mutex.lock();
         }
         table_.clear();
     }
