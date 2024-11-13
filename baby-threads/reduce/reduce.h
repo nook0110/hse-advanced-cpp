@@ -15,7 +15,7 @@ struct ThreadContext {
 
 template <class RandomAccessIterator, class T, class Func>
 void ReduceThreaded(ThreadContext ctx, RandomAccessIterator first, RandomAccessIterator last,
-                    Func func, std::optional<T>& ans) {
+                    Func func, std::atomic<T>& ans) {
     const auto [step, idx] = ctx;
     first += idx;
     if (first >= last) {
@@ -40,7 +40,7 @@ T Reduce(RandomAccessIterator first, RandomAccessIterator last, const T& initial
     std::vector<std::thread> threads;
     const auto amount_of_threads =
         std::min<size_t>(std::thread::hardware_concurrency(), std::distance(first, last));
-    std::vector<std::optional<T>> answers(amount_of_threads);
+    std::vector<std::atomic<T>> answers(amount_of_threads);
 
     for (size_t i = 0; i < amount_of_threads; ++i) {
         threads.emplace_back(ReduceThreaded<RandomAccessIterator, T, Func>,
@@ -53,9 +53,7 @@ T Reduce(RandomAccessIterator first, RandomAccessIterator last, const T& initial
     auto cur_value = initial_value;
 
     for (const auto& val : answers) {
-        if (val) {
-            cur_value = func(cur_value, *val);
-        }
+        cur_value = func(cur_value, val);
     }
 
     return cur_value;
