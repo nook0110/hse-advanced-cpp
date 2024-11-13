@@ -1,12 +1,8 @@
 #pragma once
 #include <cstddef>
-#include <atomic>
 #include <cmath>
-#include <cstdint>
-#include <deque>
 #include <iterator>
 #include <mutex>
-#include <optional>
 #include <thread>
 #include <vector>
 
@@ -17,16 +13,18 @@ struct ThreadContext {
 
 template <class RandomAccessIterator, class T, class Func>
 void ReduceThreaded(ThreadContext ctx, RandomAccessIterator first, RandomAccessIterator last,
-                    Func func, std::deque<T>& ans, std::mutex& mut) {
+                    Func func, std::vector<T>& ans, std::mutex& mut) {
     const auto [step, idx] = ctx;
     first += idx;
     if (first >= last) {
         return;
     }
+    mut.lock();
     auto cur_value = *first;
-
+    mut.unlock();
     first += step;
     while (first < last) {
+        std::scoped_lock mutex(mut);
         cur_value = func(cur_value, *first);
         first += step;
     }
@@ -43,7 +41,7 @@ T Reduce(RandomAccessIterator first, RandomAccessIterator last, const T& initial
     std::vector<std::thread> threads;
     const auto amount_of_threads =
         std::min<size_t>(std::thread::hardware_concurrency(), std::distance(first, last));
-    std::deque<T> answers(amount_of_threads);
+    std::vector<T> answers(amount_of_threads);
 
     std::mutex mut;
 
@@ -59,9 +57,7 @@ T Reduce(RandomAccessIterator first, RandomAccessIterator last, const T& initial
     auto cur_value = initial_value;
 
     for (const auto& val : answers) {
-        if (val) {
-            cur_value = func(cur_value, *val);
-        }
+        cur_value = func(cur_value, val);
     }
 
     return cur_value;
