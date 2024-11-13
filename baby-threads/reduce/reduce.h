@@ -19,13 +19,11 @@ void ReduceThreaded(ThreadContext ctx, RandomAccessIterator first, RandomAccessI
     if (first >= last) {
         return;
     }
-    mut.lock();
-    auto cur_value = *first;
-    mut.unlock();
+    T cur_value = *first;
     first += step;
     while (first < last) {
-        std::scoped_lock mutex(mut);
-        cur_value = func(cur_value, *first);
+        auto val = *first;
+        cur_value = func(cur_value, val);
         first += step;
     }
 
