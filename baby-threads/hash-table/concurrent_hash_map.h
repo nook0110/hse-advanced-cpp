@@ -58,6 +58,9 @@ public:
 
     void Clear() {
         std::lock_guard lock(mutex_);
+        for (const auto& [_, chain] : table_) {
+            std::scoped_lock chain_lock(chain.mutex);
+        }
         table_.clear();
     }
 
