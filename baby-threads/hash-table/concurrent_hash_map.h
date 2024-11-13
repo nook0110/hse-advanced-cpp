@@ -30,9 +30,8 @@ public:
     bool Insert(const K& key, const V& value) {
         std::unique_lock table_lock(mutex_);
         auto& [mutex, data] = table_[hasher_(key)];
-        table_lock.unlock();
-
         std::lock_guard chain_lock(mutex);
+        table_lock.unlock();
 
         if (std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; }) !=
             data.end()) {
@@ -45,9 +44,8 @@ public:
     bool Erase(const K& key) {
         std::unique_lock table_lock(mutex_);
         auto& [mutex, data] = table_[hasher_(key)];
-        table_lock.unlock();
-
         std::lock_guard lock(mutex);
+        table_lock.unlock();
 
         auto pos = std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; });
         if (pos == data.end()) {
@@ -75,9 +73,8 @@ public:
         }
 
         auto& [mutex, data] = table_.at(hasher_(key));
-        table_lock.unlock();
-
         std::lock_guard lock(mutex);
+        table_lock.unlock();
 
         auto it = std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; });
         return it == data.end() ? std::make_pair(false, V()) : std::make_pair(true, it->value);
@@ -86,9 +83,8 @@ public:
     const V At(const K& key) const {
         std::unique_lock table_lock(mutex_);
         auto& [mutex, data] = table_.at(hasher_(key));
-        table_lock.unlock();
-
         std::lock_guard lock(mutex);
+        table_lock.unlock();
 
         auto it = std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; });
         return it->value;
