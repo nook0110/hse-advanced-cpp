@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <functional>
+#include <vector>
 
 template <class K, class V, class Hash = std::hash<K>>
 class ConcurrentHashMap {
@@ -58,8 +59,11 @@ public:
 
     void Clear() {
         std::lock_guard lock(mutex_);
+
+        std::vector<std::unique_lock<std::mutex>> chains;
+
         for (const auto& [_, chain] : table_) {
-            std::scoped_lock chain_lock(chain.mutex);
+            chains.emplace_back(chain.mutex);
         }
         table_.clear();
     }
