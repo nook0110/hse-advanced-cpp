@@ -3,7 +3,9 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <deque>
 #include <iterator>
+#include <mutex>
 #include <optional>
 #include <thread>
 #include <vector>
@@ -13,14 +15,9 @@ struct ThreadContext {
     size_t idx;
 };
 
-template <class T>
-struct Wrapper {
-    std::atomic<T> value;
-};
-
 template <class RandomAccessIterator, class T, class Func>
 void ReduceThreaded(ThreadContext ctx, RandomAccessIterator first, RandomAccessIterator last,
-                    Func func, Wrapper<T>& ans) {
+                    Func func, std::deque<T>& ans, std::mutex& mut) {
     const auto [step, idx] = ctx;
     first += idx;
     if (first >= last) {
@@ -34,7 +31,8 @@ void ReduceThreaded(ThreadContext ctx, RandomAccessIterator first, RandomAccessI
         first += step;
     }
 
-    ans.value = cur_value;
+    std::scoped_lock mutex(mut);
+    ans[idx] = cur_value;
 }
 
 template <class RandomAccessIterator, class T, class Func>
@@ -45,20 +43,25 @@ T Reduce(RandomAccessIterator first, RandomAccessIterator last, const T& initial
     std::vector<std::thread> threads;
     const auto amount_of_threads =
         std::min<size_t>(std::thread::hardware_concurrency(), std::distance(first, last));
-    std::vector<Wrapper<T>> answers(amount_of_threads);
+    std::deque<T> answers(amount_of_threads);
+
+    std::mutex mut;
 
     for (size_t i = 0; i < amount_of_threads; ++i) {
         threads.emplace_back(ReduceThreaded<RandomAccessIterator, T, Func>,
                              ThreadContext{amount_of_threads, i}, first, last, func,
-                             std::ref(answers[i]));
+                             std::ref(answers), std::ref(mut));
     }
     for (auto& thread : threads) {
         thread.join();
     }
+
     auto cur_value = initial_value;
 
     for (const auto& val : answers) {
-        cur_value = func(cur_value, val.value);
+        if (val) {
+            cur_value = func(cur_value, *val);
+        }
     }
 
     return cur_value;
