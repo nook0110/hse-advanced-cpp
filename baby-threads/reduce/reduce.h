@@ -34,6 +34,9 @@ void ReduceThreaded(ThreadContext ctx, RandomAccessIterator first, RandomAccessI
 
 template <class RandomAccessIterator, class T, class Func>
 T Reduce(RandomAccessIterator first, RandomAccessIterator last, const T& initial_value, Func func) {
+    if (first == last) {
+        return initial_value;
+    }
     std::vector<std::thread> threads;
     const auto amount_of_threads = std::thread::hardware_concurrency();
     std::vector<std::optional<T>> answers(amount_of_threads);
