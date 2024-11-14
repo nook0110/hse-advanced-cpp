@@ -30,10 +30,11 @@ public:
             std::max(1, (2 + expected_size / expected_threads_count) * expected_threads_count);
         mutexes_.resize(expected_threads_count);
         chains_.resize(expected_size);
+        chains_size_ = chains_.size();
     }
 
     bool Insert(const K& key, const V& value) {
-        if (size_ > chains_.size() / 2) {
+        if (size_ > chains_size_ / 2) {
             LockAll();
             Rehash();
             UnlockAll();
@@ -136,6 +137,7 @@ private:
             }
         }
         std::swap(chains_, new_chains);
+        chains_size_ = chains_.size();
     }
 
     const Chain& GetChain(const K& k) const {
@@ -150,6 +152,7 @@ private:
     mutable std::deque<std::mutex> mutexes_;
     std::vector<Chain> chains_;
     std::atomic<size_t> size_;
+    std::atomic<size_t> chains_size_;
 };
 
 template <class K, class V, class Hash>
