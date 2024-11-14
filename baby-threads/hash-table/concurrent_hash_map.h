@@ -32,9 +32,11 @@ public:
     }
 
     bool Insert(const K& key, const V& value) {
+        LockAll();
         if (size_ > chains_.size() / 2) {
             Rehash();
         }
+        UnlockAll();
 
         auto lock = Lock(key);
         auto& chain = GetChain(key);
@@ -125,8 +127,6 @@ private:
     }
 
     void Rehash() {
-        LockAll();
-
         std::vector<Chain> new_chains(chains_.size() * 2);
 
         for (auto& chain : chains_) {
@@ -135,8 +135,6 @@ private:
             }
         }
         std::swap(chains_, new_chains);
-
-        UnlockAll();
     }
 
     const Chain& GetChain(const K& k) const {
