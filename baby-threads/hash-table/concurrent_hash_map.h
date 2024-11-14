@@ -128,7 +128,7 @@ private:
     }
 
     void Rehash() {
-        std::vector<Chain> new_chains(chains_.size() * 2);
+        std::vector<Chain> new_chains(chains_.size() * 3);
 
         for (auto& chain : chains_) {
             for (auto& node : chain) {
