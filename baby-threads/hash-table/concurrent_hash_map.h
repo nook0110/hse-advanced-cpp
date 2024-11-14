@@ -34,13 +34,12 @@ public:
     }
 
     bool Insert(const K& key, const V& value) {
+        auto lock = Lock(key);
         if (size_ > chains_size_ / 2) {
             LockAll();
             Rehash();
             UnlockAll();
         }
-
-        auto lock = Lock(key);
         auto& chain = GetChain(key);
 
         if (auto it = std::ranges::lower_bound(chain, Node{key, {}});
