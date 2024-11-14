@@ -1,8 +1,12 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
+#include <ranges>
+#include <deque>
 #include <list>
+#include <stdexcept>
 #include <unordered_map>
 #include <mutex>
 #include <functional>
@@ -20,104 +24,132 @@ public:
 
     ConcurrentHashMap(int expected_size, int expected_threads_count, const Hash& hasher = Hash())
         : hasher_(hasher) {
-        (void)expected_threads_count;
-
-        if (expected_size != kUndefinedSize) {
-            table_.reserve(expected_size);
-        }
+        expected_threads_count = std::max(1, expected_threads_count);
+        expected_size = (1 + expected_size / expected_threads_count) * expected_threads_count;
+        mutexes_.resize(expected_threads_count);
+        chains_.resize(expected_size);
     }
 
     bool Insert(const K& key, const V& value) {
-        std::unique_lock table_lock(mutex_);
-        auto& [mutex, data] = table_[hasher_(key)];
-        std::lock_guard chain_lock(mutex);
-        table_lock.unlock();
+        if (size_ > chains_.size() / 2) {
+            Rehash();
+        }
 
-        if (std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; }) !=
-            data.end()) {
+        auto lock = Lock(key);
+        auto& chain = GetChain(key);
+
+        if (auto it = std::ranges::lower_bound(chain, Node{key, {}});
+            it != chain.end() && it->first == key) {
             return false;
         }
-        data.emplace_back(key, value);
+        chain.merge(Chain(1, Node{key, value}));
+        ++size_;
+
         return true;
     }
 
     bool Erase(const K& key) {
-        std::unique_lock table_lock(mutex_);
-        auto& [mutex, data] = table_[hasher_(key)];
-        std::lock_guard lock(mutex);
-        table_lock.unlock();
+        auto lock = Lock(key);
+        auto& chain = GetChain(key);
 
-        auto pos = std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; });
-        if (pos == data.end()) {
+        if (auto it = std::ranges::lower_bound(chain, Node{key, {}});
+            it == chain.end() || it->first != key) {
             return false;
+        } else {
+            chain.erase(it);
+            --size_;
+            return true;
         }
-        data.erase(pos);
-        return true;
     }
 
     void Clear() {
-        std::lock_guard lock(mutex_);
-
-        for (const auto& [_, chain] : table_) {
-            chain.mutex.lock();
+        LockAll();
+        for (auto& chain : chains_) {
+            chain.clear();
         }
-        table_.clear();
+        size_ = 0;
+        UnlockAll();
     }
 
     std::pair<bool, V> Find(const K& key) const {
-        std::unique_lock table_lock(mutex_);
-        if (!table_.contains(hasher_(key))) {
-            return std::make_pair(false, V());
+        auto lock = Lock(key);
+        auto& chain = GetChain(key);
+
+        if (auto it = std::ranges::lower_bound(chain, Node{key, {}});
+            it == chain.end() || it->first != key) {
+            return std::make_pair(false, V{});
+        } else {
+            return std::make_pair(true, it->second);
         }
-
-        auto& [mutex, data] = table_.at(hasher_(key));
-        std::lock_guard lock(mutex);
-        table_lock.unlock();
-
-        auto it = std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; });
-        return it == data.end() ? std::make_pair(false, V()) : std::make_pair(true, it->value);
     }
 
-    const V At(const K& key) const {
-        std::unique_lock table_lock(mutex_);
-        auto& [mutex, data] = table_.at(hasher_(key));
-        std::lock_guard lock(mutex);
-        table_lock.unlock();
+    const V& At(const K& key) const {
+        auto lock = Lock(key);
+        auto& chain = GetChain(key);
 
-        auto it = std::ranges::find_if(data, [&key](const auto& node) { return node.key == key; });
-        return it->value;
+        if (auto it = std::ranges::lower_bound(chain, Node{key, {}});
+            it == chain.end() || it->first != key) {
+            throw std::out_of_range("");
+        } else {
+            return it->second;
+        }
     }
 
     size_t Size() const {
-        std::lock_guard lock(mutex_);
-
-        size_t ans = 0;
-
-        for (const auto& [_, chain] : table_) {
-            ans += chain.data.size();
-        }
-
-        return ans;
+        return size_;
     }
 
     static const int kDefaultConcurrencyLevel;
     static const int kUndefinedSize;
 
 private:
+    using Node = std::pair<const K, V>;
+
+    using Chain = std::list<Node>;
+
+    std::unique_lock<std::mutex> Lock(const K& k) const {
+        return std::unique_lock{mutexes_[hasher_(k) % mutexes_.size()]};
+    }
+
+    void LockAll() const {
+        for (auto& mutex : mutexes_) {
+            mutex.lock();
+        }
+    }
+
+    void UnlockAll() const {
+        for (auto& mutex : mutexes_ | std::views::reverse) {
+            mutex.unlock();
+        }
+    }
+
+    void Rehash() {
+        LockAll();
+
+        std::vector<Chain> new_chains(chains_.size() * 2);
+
+        for (auto& chain : chains_) {
+            for (auto& node : chain) {
+                new_chains[hasher_(node.first) % new_chains.size()].emplace_back(node);
+            }
+        }
+        std::swap(chains_, new_chains);
+
+        UnlockAll();
+    }
+
+    const Chain& GetChain(const K& k) const {
+        return chains_[hasher_(k) % chains_.size()];
+    }
+
+    Chain& GetChain(const K& k) {
+        return chains_[hasher_(k) % chains_.size()];
+    }
+
     Hash hasher_;
-
-    struct Node {
-        const K key;
-        V value;
-    };
-
-    struct Chain {
-        mutable std::mutex mutex;
-        std::list<Node> data;
-    };
-
-    std::unordered_map<size_t, Chain> table_;
-    mutable std::mutex mutex_;
+    mutable std::deque<std::mutex> mutexes_;
+    std::vector<Chain> chains_;
+    std::atomic<size_t> size_;
 };
 
 template <class K, class V, class Hash>
