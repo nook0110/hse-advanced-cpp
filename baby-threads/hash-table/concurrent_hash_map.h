@@ -25,8 +25,9 @@ public:
 
     ConcurrentHashMap(int expected_size, int expected_threads_count, const Hash& hasher = Hash())
         : hasher_(hasher) {
-        expected_threads_count = std::max(1, expected_threads_count) + 1;
-        expected_size = (1 + expected_size / expected_threads_count) * expected_threads_count;
+        expected_threads_count = std::max(1, expected_threads_count + 1 + rand() % 2);
+        expected_size =
+            std::max(1, (2 + expected_size / expected_threads_count) * expected_threads_count);
         mutexes_.resize(expected_threads_count);
         chains_.resize(expected_size);
     }
