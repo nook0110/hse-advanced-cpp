@@ -22,9 +22,10 @@ public:
 
         cv_.wait(lock, [this]() { return !queue_.empty(); });
 
-        if (auto min_time = queue_.top().time; Clock::now() < min_time) {
-            cv_.wait_until(lock, min_time);
-        }
+        cv_.wait_until(lock, queue_.top().time, [this]() {
+            auto min_time = queue_.top().time;
+            return Clock::now() >= min_time;
+        });
 
         Item item = queue_.top();
         queue_.pop();
