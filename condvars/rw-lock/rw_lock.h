@@ -22,7 +22,7 @@ public:
 
     template <class Func>
     void Write(Func func) {
-        std::lock_guard<std::mutex> lock(global_);
+        std::scoped_lock lock(global_, read_);
         func();
     }
 
