@@ -1,42 +1,63 @@
 #pragma once
+#include <condition_variable>
 #include <mutex>
 
 class RWLock {
 public:
     template <class Func>
     void Read(Func func) {
-        read_.lock();
-        ++blocked_readers_;
-        if (blocked_readers_ == 1) {
-            global_.lock();
-        }
-        read_.unlock();
+        ReadLock();
+
         try {
             func();
         } catch (...) {
-            EndRead();
+            ReadUnlock();
             throw;
         }
-        EndRead();
+
+        ReadUnlock();
+    }
+
+    void ReadLock() {
+        std::unique_lock lock(mutex_);
+
+        cv_.wait(lock, [this]() { return !writer_; });
+
+        ++blocked_readers_;
+    }
+
+    void ReadUnlock() {
+        std::unique_lock lock(mutex_);
+        --blocked_readers_;
+        if (blocked_readers_ == 0) {
+            cv_.notify_all();
+        }
     }
 
     template <class Func>
     void Write(Func func) {
-        std::scoped_lock lock(global_, read_);
+        WriteLock();
         func();
+        WriteUnlock();
+    }
+
+    void WriteLock() {
+        std::unique_lock lock(mutex_);
+
+        cv_.wait(lock, [this]() { return !writer_ && blocked_readers_ == 0; });
+        writer_ = true;
+    }
+
+    void WriteUnlock() {
+        std::unique_lock lock(mutex_);
+        writer_ = false;
+        cv_.notify_all();
     }
 
 private:
-    std::mutex read_;
-    std::mutex global_;
-    int blocked_readers_ = 0;
+    std::mutex mutex_;
+    std::condition_variable cv_;
 
-    void EndRead() {
-        read_.lock();
-        --blocked_readers_;
-        if (!blocked_readers_) {
-            global_.unlock();
-        }
-        read_.unlock();
-    }
+    bool writer_ = false;
+    int blocked_readers_ = 0;
 };
