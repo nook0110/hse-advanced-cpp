@@ -27,6 +27,11 @@ public:
         read = false;
         cv_.notify_all();
         cv_.wait(lock, [this]() { return read || closed_; });
+        if(closed_ && !read) {
+            cv_.notify_all();
+            throw std::runtime_error("wat r u doing bro");
+        }
+        cv_.notify_all();
     }
 
     std::optional<T> Recv() {
