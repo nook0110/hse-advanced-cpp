@@ -5,9 +5,10 @@
 
 struct RWSpinLock {
     void LockRead() {
-        while (lock_.load() & 1) {
+        std::size_t amount = lock_.load();
+        while (amount % 2 != 0 || !lock_.compare_exchange_strong(amount, amount + 2)) {
+            amount = lock_.load();
         }
-        lock_.fetch_add(2);
     }
 
     void UnlockRead() {
@@ -15,9 +16,10 @@ struct RWSpinLock {
     }
 
     void LockWrite() {
-        while (lock_.load()) {
+        std::size_t flag = 0;
+        while (!lock_.compare_exchange_strong(flag, 1)) {
+            flag = 0;
         }
-        lock_.store(1);
     }
 
     void UnlockWrite() {
