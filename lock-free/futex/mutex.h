@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <cstdint>
-#include <mutex>
 
 // Atomically do the following:
 //    if (*(uint64_t*)addr == expected_value) {
