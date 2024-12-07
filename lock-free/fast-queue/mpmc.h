@@ -9,14 +9,17 @@ template <class T>
 class MPMCBoundedQueue {
 public:
     explicit MPMCBoundedQueue(int size) : mask_(size - 1), nodes_(size) {
+        for (int i = 0; i < size; ++i) {
+            nodes_[i].age = i;
+        }
     }
 
     bool Enqueue(const T& value) {
         auto pos = end_.load();
-        auto idx = pos & mask_;
         Node* node;
 
         while (true) {
+            auto idx = pos & mask_;
             node = &nodes_[idx];
 
             size_t age = node->age.load();
@@ -34,17 +37,17 @@ public:
 
         node->value = value;
 
-        node->age.store(pos + mask_ + 1);
+        node->age.store(pos + 1);
 
         return true;
     }
 
     bool Dequeue(T& data) {
         auto pos = begin_.load();
-        auto idx = pos & mask_;
         Node* node;
 
         while (true) {
+            auto idx = pos & mask_;
             node = &nodes_[idx];
 
             size_t age = node->age.load();
@@ -74,7 +77,7 @@ private:
     };
 
     std::atomic_size_t begin_ = 0;
-    std::atomic_size_t end_ = 1;
+    std::atomic_size_t end_ = 0;
 
     const size_t mask_;
 
