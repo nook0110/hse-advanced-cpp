@@ -135,7 +135,7 @@ bool HuffmanTree::Impl::Move(bool bit, int& value) {
     return false;
 }
 
-HuffmanTree::HuffmanTree() : impl_(std::make_unique<HuffmanTree::Impl>()) {};
+HuffmanTree::HuffmanTree() : impl_(std::make_unique<HuffmanTree::Impl>()){};
 
 void HuffmanTree::Build(const std::vector<uint8_t>& code_lengths,
                         const std::vector<uint8_t>& values) {
