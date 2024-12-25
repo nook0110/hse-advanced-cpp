@@ -9,16 +9,13 @@
 class DctCalculator::Impl {
 public:
     Impl(size_t width, std::vector<double> *input, std::vector<double> *output)
-        : length_(input->size() / width),
-          width_(width),
-          input_(input),
-          output_(output),
-          plan_(fftw_plan_r2r_2d(length_, width_, input_->data(), output_->data(),
-                                 fftw_r2r_kind::FFTW_REDFT01, fftw_r2r_kind::FFTW_REDFT01,
-                                 FFTW_ESTIMATE)) {
+        : length_(input->size() / width), width_(width), input_(input), output_(output) {
         if (input->size() != width * width || output->size() != width * width) {
             throw std::invalid_argument("bad");
         }
+        plan_ = fftw_plan_r2r_2d(length_, width_, input_->data(), output_->data(),
+                                 fftw_r2r_kind::FFTW_REDFT01, fftw_r2r_kind::FFTW_REDFT01,
+                                 FFTW_ESTIMATE);
     };
 
     void Inverse() {
